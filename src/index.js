@@ -10,7 +10,17 @@ console.log("Rollup HTTP Server URL is " + rollupServerUrl);
 // In-memory storage for the to-do list
 let todoList = [];
 
+// Helper function to get the next ID
+const getNextId = () => {
+  return todoList.length ? Math.max(...todoList.map(item => item.id)) + 1 : 1;
+};
+
 async function handleAdvance(data) {
+  if (!data || !data.action) {
+    console.log("Invalid request data");
+    return "reject";
+  }
+
   console.log("Received advance request data: ", JSON.stringify(data));
 
   const { action, itemId, content } = data;
@@ -19,7 +29,7 @@ async function handleAdvance(data) {
     case "add":
       // Add a new item
       const newItem = {
-        id: todoList.length + 1, // Simple auto-increment id
+        id: getNextId(), // Consistent ID management
         content: content || "",
       };
       todoList.push(newItem);
@@ -57,6 +67,11 @@ async function handleAdvance(data) {
 }
 
 async function handleInspect(data) {
+  if (!data || !data.action) {
+    console.log("Invalid request data");
+    return "reject";
+  }
+
   console.log("Received inspect request data: ", JSON.stringify(data));
 
   const { action, itemId } = data;
@@ -90,12 +105,22 @@ const handlers = {
 };
 
 app.post("/rollup", async (req, res) => {
-  const rollupReq = req.body;
-  const handler = handlers[rollupReq.request_type];
-  const status = await handler(rollupReq.data);
-  res.json({ status });
+  try {
+    const rollupReq = req.body;
+    const handler = handlers[rollupReq.request_type];
+    if (handler) {
+      const status = await handler(rollupReq.data);
+      res.json({ status });
+    } else {
+      res.status(400).json({ status: "unknown request type" });
+    }
+  } catch (error) {
+    console.error("Error handling request: ", error);
+    res.status(500).json({ status: "error" });
+  }
 });
 
-app.listen(3000, () => {
-  console.log("Cartesi dApp backend listening on port 4000");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Cartesi dApp backend listening on port ${PORT}`);
 });
