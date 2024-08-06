@@ -97,5 +97,5 @@ app.post("/rollup", async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log("Cartesi dApp backend listening on port 3000");
+  console.log("Cartesi dApp backend listening on port 4000");
 });
